@@ -2,8 +2,8 @@ import os
 import zipfile
 
 # 定义路径
-zip_files = ["/root/autodl-tmp/three_data/757.zip", "/root/autodl-tmp/three_data/305.zip", "/root/autodl-tmp/three_data/222.zip", "/root/autodl-tmp/three_data/121.zip", "/root/autodl-tmp/three_data/118.zip", "/root/autodl-tmp/three_data/180.zip"]
-output_dir = "/root/autodl-tmp/three_data/merged_dataset"
+zip_files = ["/root/autodl-tmp/three_data/all_zipfiles/757.zip", "/root/autodl-tmp/three_data/all_zipfiles/305.zip", "/root/autodl-tmp/three_data/all_zipfiles/222.zip", "/root/autodl-tmp/three_data/all_zipfiles/121.zip", "/root/autodl-tmp/three_data/all_zipfiles/118.zip", "/root/autodl-tmp/three_data/all_zipfiles/180.zip"]
+output_dir = "/root/autodl-tmp/three_data/all_zipfiles/merged_dataset"
 
 # 创建输出目录
 os.makedirs(os.path.join(output_dir, "images"), exist_ok=True)
