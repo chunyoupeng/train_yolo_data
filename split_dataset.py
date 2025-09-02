@@ -58,8 +58,9 @@ def split_dataset(images_dir, labels_dir, train_dir, val_dir, train_ratio=0.8):
             label_dst.symlink_to(label_path)
 
 if __name__ == "__main__":
-    # Define paths
-    merged_dataset_dir = Path("/root/autodl-tmp/three_data/merged_dataset")
+    # Define paths (relative to repo root by default)
+    root = Path(__file__).resolve().parent
+    merged_dataset_dir = Path(os.environ.get("MERGED_DIR", root / "merged_dataset"))
     images_dir = merged_dataset_dir / "images"
     labels_dir = merged_dataset_dir / "labels"
     train_dir = merged_dataset_dir / "train"

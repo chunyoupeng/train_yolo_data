@@ -5,12 +5,10 @@ SHELL := bash
 .RECIPEPREFIX := >
 
 PY ?= uv run
-ZIPS_DIR ?= /root/autodl-tmp/three_data/all_zipfiles
-MERGED_FROM ?= $(ZIPS_DIR)/merged_dataset
-MERGED_TO ?= /root/autodl-tmp/three_data/merged_dataset
-ZIP_FILES := 757.zip 305.zip 222.zip 121.zip 118.zip 180.zip
+ZIPS_DIR ?= $(PWD)/all_zipfiles
+MERGED_DIR ?= $(PWD)/merged_dataset
 
-.PHONY: help setup check-zips merge link-merged detect split data train check-yolo run clean
+.PHONY: help setup check-zips merge detect split data train train-multi check-yolo run clean
 
 help: ## Show available make targets
 > @awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_.-]+:.*##/ {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -18,38 +16,48 @@ help: ## Show available make targets
 setup: ## Install dependencies into the local environment (uv)
 > uv sync
 
-check-zips: ## Verify required ZIP files exist in $(ZIPS_DIR)
-> @missing=0; \
-> for z in $(ZIP_FILES); do \
->     if [ ! -f "$(ZIPS_DIR)/$$z" ]; then echo "Missing: $(ZIPS_DIR)/$$z"; missing=1; fi; \
-> done; \
-> if [ $$missing -eq 1 ]; then echo "Place ZIPs in $(ZIPS_DIR)"; exit 1; fi; \
-> echo "All ZIPs present."
+check-zips: ## Verify there are ZIP files in $(ZIPS_DIR)
+> @count=$$(ls -1 "$(ZIPS_DIR)"/*.zip 2>/dev/null | wc -l | tr -d ' '); \
+> if [ "$$count" = "0" ]; then echo "No ZIP files in $(ZIPS_DIR)"; exit 1; else echo "Found $$count ZIP(s)."; fi
 
 merge: check-zips ## Merge ZIPs into merged_dataset
-> $(PY) merge_zip_files.py
-
-link-merged: ## Ensure expected merged_dataset symlink exists
-> @mkdir -p "$(dir $(MERGED_TO))"
-> @if [ -d "$(MERGED_FROM)" ] && [ ! -e "$(MERGED_TO)" ]; then \
->     ln -s "$(MERGED_FROM)" "$(MERGED_TO)"; \
->     echo "Linked $(MERGED_TO) -> $(MERGED_FROM)"; \
-> elif [ -e "$(MERGED_TO)" ] && [ ! -L "$(MERGED_TO)" ]; then \
->     echo "$(MERGED_TO) exists (not a symlink). Skipping."; \
-> else \
->     echo "Using $(MERGED_TO)"; \
-> fi
+> MERGED_DIR=$(MERGED_DIR) ZIPS_DIR=$(ZIPS_DIR) $(PY) merge_zip_files.py
 
 detect: ## Append car labels with YOLOv8
-> $(PY) detect_cars.py
+> MERGED_DIR=$(MERGED_DIR) $(PY) detect_cars.py
+
+DETECT_GPUS ?= 0,1
+DETECT_BATCH ?= 32
+DETECT_WORKERS ?= 8
+
+detect-multi: ## Parallel detection across GPUs using shards (set DETECT_GPUS)
+> IFS=',' read -r -a GPUS <<< '$(DETECT_GPUS)'; \
+> N=$${#GPUS[@]}; \
+> for i in $$(seq 0 $$((N-1))); do \
+>   gpu=$${GPUS[$$i]}; \
+>   echo "Launch shard $$i/$$((N-1)) on GPU $$gpu"; \
+>   CUDA_VISIBLE_DEVICES=$$gpu \
+>   MERGED_DIR=$(MERGED_DIR) \
+>   DEVICE=0 SHARDS=$$N SHARD_ID=$$i \
+>   BATCH=$(DETECT_BATCH) WORKERS=$(DETECT_WORKERS) \
+>   $(PY) detect_cars.py & \
+> done; \
+> wait; \
+> echo "Multi-GPU detection finished."
 
 split: ## Create train/ and val/ splits
-> $(PY) split_dataset.py
+> MERGED_DIR=$(MERGED_DIR) $(PY) split_dataset.py
 
-data: merge link-merged detect split ## Run full data pipeline
+data: merge detect split ## Run full data pipeline
 
 train: check-yolo ## Train YOLO with provided hyperparameters
 > bash train.sh
+
+TRAIN_MULTI_DEVICES ?= 0,1
+TRAIN_MULTI_BATCH ?= 32
+
+train-multi: check-yolo ## Train on two GPUs (override with TRAIN_MULTI_DEVICES/TRAIN_MULTI_BATCH)
+> DEVICES=$(TRAIN_MULTI_DEVICES) BATCH=$(TRAIN_MULTI_BATCH) bash train.sh
 
 check-yolo: ## Ensure yolo CLI is available
 > @command -v yolo >/dev/null 2>&1 || { echo "yolo CLI not found. Run 'make setup' to install deps."; exit 1; }
@@ -58,7 +66,6 @@ run: ## Run main entry script
 > $(PY) main.py
 
 clean: ## Remove generated train/ and val/ splits (keeps merged data)
-> @if [ -d "$(MERGED_TO)/train" ]; then rm -rf "$(MERGED_TO)/train"; fi
-> @if [ -d "$(MERGED_TO)/val" ]; then rm -rf "$(MERGED_TO)/val"; fi
+> @if [ -d "$(MERGED_DIR)/train" ]; then rm -rf "$(MERGED_DIR)/train"; fi
+> @if [ -d "$(MERGED_DIR)/val" ]; then rm -rf "$(MERGED_DIR)/val"; fi
 > @echo "Cleaned train/ and val/."
-

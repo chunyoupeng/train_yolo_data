@@ -9,7 +9,7 @@
 - `all_zipfiles/`: Place source ZIPs here. Large data and weights are git-ignored.
 - `pyproject.toml`: Python 3.12 project with `ultralytics` and `opencv-python`.
 
-Note: Some scripts use absolute paths under `/root/autodl-tmp/three_data`. Adjust these paths for your environment before running.
+Note: Some scripts use absolute paths under `/root/autodl-tmp/train_yolo_data`. Adjust these paths for your environment before running.
 
 ## Build, Test, and Development Commands
 - `uv sync`: Install deps into the local virtual env.

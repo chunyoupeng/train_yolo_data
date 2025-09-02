@@ -1,31 +1,38 @@
 import os
 import zipfile
+from pathlib import Path
 
-# 定义路径
-zip_files = ["/root/autodl-tmp/three_data/all_zipfiles/757.zip", "/root/autodl-tmp/three_data/all_zipfiles/305.zip", "/root/autodl-tmp/three_data/all_zipfiles/222.zip", "/root/autodl-tmp/three_data/all_zipfiles/121.zip", "/root/autodl-tmp/three_data/all_zipfiles/118.zip", "/root/autodl-tmp/three_data/all_zipfiles/180.zip"]
-output_dir = "/root/autodl-tmp/three_data/all_zipfiles/merged_dataset"
+"""
+将 all_zipfiles/ 目录下的所有 ZIP 合并解压到 merged_dataset/{images,labels}
+可通过环境变量覆盖：
+  ZIPS_DIR   (默认: <repo>/all_zipfiles)
+  MERGED_DIR (默认: <repo>/merged_dataset)
+"""
 
-# 创建输出目录
-os.makedirs(os.path.join(output_dir, "images"), exist_ok=True)
-os.makedirs(os.path.join(output_dir, "labels"), exist_ok=True)
+ROOT = Path(__file__).resolve().parent
+ZIPS_DIR = Path(os.environ.get("ZIPS_DIR", ROOT / "all_zipfiles"))
+OUTPUT_DIR = Path(os.environ.get("MERGED_DIR", ROOT / "merged_dataset"))
 
-# 解压所有zip文件
+(OUTPUT_DIR / "images").mkdir(parents=True, exist_ok=True)
+(OUTPUT_DIR / "labels").mkdir(parents=True, exist_ok=True)
+
+zip_files = sorted(ZIPS_DIR.glob("*.zip"))
+if not zip_files:
+    raise SystemExit(f"未找到 ZIP 文件，请将 *.zip 放入: {ZIPS_DIR}")
+
 for zip_path in zip_files:
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        # 获取zip文件中的所有文件列表
-        file_list = zip_ref.namelist()
-        
-        # 分别处理images和labels文件夹中的文件
-        for file_name in file_list:
-            if file_name.startswith("images/") and file_name.endswith(".jpg"):
-                # 提取图片文件
-                with zip_ref.open(file_name) as source, \
-                     open(os.path.join(output_dir, file_name), "wb") as target:
-                    target.write(source.read())
+        for file_name in zip_ref.namelist():
+            if file_name.startswith("images/") and file_name.lower().endswith((".jpg", ".jpeg", ".png")):
+                dest = OUTPUT_DIR / file_name
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                with zip_ref.open(file_name) as src, open(dest, "wb") as dst:
+                    dst.write(src.read())
             elif file_name.startswith("labels/") and file_name.endswith(".txt"):
-                # 提取标签文件
-                with zip_ref.open(file_name) as source, \
-                     open(os.path.join(output_dir, file_name), "wb") as target:
-                    target.write(source.read())
+                dest = OUTPUT_DIR / file_name
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                with zip_ref.open(file_name) as src, open(dest, "wb") as dst:
+                    dst.write(src.read())
 
-print("所有zip文件已成功解压并合并到 merged_dataset 目录中。")
+print(f"已合并 {len(zip_files)} 个 ZIP 至: {OUTPUT_DIR}")
+
