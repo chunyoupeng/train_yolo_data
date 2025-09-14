@@ -66,6 +66,7 @@ run: ## Run main entry script
 > $(PY) main.py
 
 clean: ## Remove generated train/ and val/ splits (keeps merged data)
+> @if [ -d "$(MERGED_DIR)" ]; then rm -rf "$(MERGED_DIR)"; fi
 > @if [ -d "$(MERGED_DIR)/train" ]; then rm -rf "$(MERGED_DIR)/train"; fi
 > @if [ -d "$(MERGED_DIR)/val" ]; then rm -rf "$(MERGED_DIR)/val"; fi
-> @echo "Cleaned train/ and val/."
+> @echo "Cleaned $(MERGED_DIR) train/ and val/."
