@@ -27,8 +27,8 @@ detect: ## Append car labels with YOLOv8
 > MERGED_DIR=$(MERGED_DIR) $(PY) detect_cars.py
 
 DETECT_GPUS ?= 0,1
-DETECT_BATCH ?= 32
-DETECT_WORKERS ?= 8
+DETECT_BATCH ?= 4
+DETECT_WORKERS ?= 2
 
 detect-multi: ## Parallel detection across GPUs using shards (set DETECT_GPUS)
 > IFS=',' read -r -a GPUS <<< '$(DETECT_GPUS)'; \

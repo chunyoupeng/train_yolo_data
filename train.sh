@@ -12,7 +12,7 @@ PROJECT=${PROJECT:-runs/train}
 NAME=${NAME:-exp_${DEVICES//,/}}
 
 DATA=${DATA:-merged_dataset/data.yaml}
-MODEL=${MODEL:-yolov8m.pt}
+MODEL=${MODEL:-yolo11m.pt}
 EPOCHS=${EPOCHS:-100}
 IMG=${IMG:-640}
 
