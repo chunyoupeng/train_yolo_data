@@ -25,8 +25,8 @@ LABELS_DIR = MERGED_DIR / "labels"
 
 MODEL_PATH = Path(os.environ.get("DETECT_MODEL", ROOT / "yolov8m.pt"))
 BATCH_SIZE = int(os.environ.get("BATCH", 32))
-CONF_THRES = float(os.environ.get("CONF", 0.25))
-IMG_SIZE = int(os.environ.get("IMG_SIZE", 640))
+CONF_THRES = float(os.environ.get("CONF", 0.15))
+IMG_SIZE = int(os.environ.get("IMG_SIZE", 960))
 
 COCO_CAR_CLS = 2          # COCO car=2
 DATASET_CAR_CLS = 4       # 你的数据集 car=4
