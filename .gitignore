@@ -4,3 +4,4 @@ merged_dataset
 *.json
 __pycache__
 runs
+park-data/

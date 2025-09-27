@@ -1,0 +1,1 @@
+yolo detect predict   model=yolo11m.pt   source=merged_dataset/val/images/   imgsz=640   classes=2   save=True   save_txt=True save_conf=True   project=runs/val name=viewit_images_yolo11m
