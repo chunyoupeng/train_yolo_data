@@ -7,6 +7,7 @@ SHELL := bash
 PY ?= uv run
 ZIPS_DIR ?= $(PWD)/all_zipfiles
 MERGED_DIR ?= $(PWD)/merged_dataset
+DATA ?= $(MERGED_DIR)/data.yaml
 
 .PHONY: help setup check-zips merge detect split data train train-multi check-yolo run clean
 
@@ -51,13 +52,13 @@ split: ## Create train/ and val/ splits
 data: merge detect split ## Run full data pipeline
 
 train: check-yolo ## Train YOLO with provided hyperparameters
-> bash train.sh
+> DATA=$(DATA) bash train.sh
 
 TRAIN_MULTI_DEVICES ?= 0,1
-TRAIN_MULTI_BATCH ?= 32
+TRAIN_MULTI_BATCH ?= 16
 
 train-multi: check-yolo ## Train on two GPUs (override with TRAIN_MULTI_DEVICES/TRAIN_MULTI_BATCH)
-> DEVICES=$(TRAIN_MULTI_DEVICES) BATCH=$(TRAIN_MULTI_BATCH) bash train.sh
+> DATA=$(DATA) DEVICES=$(TRAIN_MULTI_DEVICES) BATCH=$(TRAIN_MULTI_BATCH) bash train.sh
 
 check-yolo: ## Ensure yolo CLI is available
 > @command -v yolo >/dev/null 2>&1 || { echo "yolo CLI not found. Run 'make setup' to install deps."; exit 1; }
